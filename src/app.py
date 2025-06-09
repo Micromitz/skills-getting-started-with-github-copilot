@@ -55,6 +55,23 @@ def get_activities():
 @app.post("/activities/{activity_name}/signup")
 def signup_for_activity(activity_name: str, email: str):
     """Sign up a student for an activity"""
+    # Validate student is not already signed up
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+    if "@" not in email or "." not in email:
+        raise HTTPException(status_code=400, detail="Invalid email format")
+    if any(email in activity["participants"] for activity in activities.values()):
+        raise HTTPException(status_code=400, detail="Student already signed up for an activity")
+    # Validate activity name format
+    if not activity_name.isalnum() or len(activity_name) < 3:
+        raise HTTPException(status_code=400, detail="Invalid activity name format")
+    if not activity_name.replace(" ", "").isalnum():
+        raise HTTPException(status_code=400, detail="Activity name must be alphanumeric")
+    # Validate activity has not reached max participants
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    if len(activities[activity_name]["participants"]) >= activities[activity_name]["max_participants"]:
+        raise HTTPException(status_code=400, detail="Activity has reached maximum participants")
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
